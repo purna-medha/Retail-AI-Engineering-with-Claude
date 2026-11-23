@@ -1,0 +1,1 @@
+uv add anthropic python-dotenv gradio 
