@@ -55,15 +55,15 @@ A person selected the excerpt on the previous slide. In RAG, the application sel
 
 # Try the search first
 
-Copy [2_rag.py](../snippets/2_rag.py) to `snippets/2_rag_search.py`. In the copy, remove the `Settings.llm = Anthropic(...)` block. Replace the last three lines with a search and a print.
+Copy [2_rag.py](../snippets/2_rag.py) to `snippets/2_rag_search.py`. Keep the code through `hits = retriever.retrieve(question)`. Replace the rest with these two lines.
 
 ```python
-hits = index.as_retriever(similarity_top_k=2).retrieve(question)
-print(hits[0].node.metadata["source"])
-print(hits[0].node.get_content())
+print(hits[0].node.metadata["file_name"])
+print(hits[0].node.text)
 ```
 
 ```bash
+uv add anthropic fastembed llama-index-core llama-index-embeddings-fastembed python-dotenv
 uv run snippets/2_rag_search.py
 ```
 
@@ -88,10 +88,7 @@ The classroom script builds the index in memory each time it starts. An applicat
 The [fixture folder](../snippets/rag_policies/) has two short Markdown files with fictional policy rules. LlamaIndex reads each file into a document object.
 
 ```python
-documents = SimpleDirectoryReader(
-    input_dir=str(policy_dir),
-    file_metadata=lambda path: {"source": Path(path).name},
-).load_data()
+documents = SimpleDirectoryReader(input_dir=str(policy_dir)).load_data()
 ```
 
 The reader gives us the text and a filename. The filename travels with the text so a learner can check an answer against the original source.
@@ -151,11 +148,10 @@ hits = retriever.retrieve(question)
 
 # 6 · Give Claude the retrieved text
 
-The query engine supplies the selected excerpts and the question. The demo’s system instruction tells Claude how to use them.
+Build the context from the retrieved excerpts. Include the filename with each excerpt so Claude can cite it.
 
-```text
-Answer from the policy excerpts. Cite the source filename.
-If the excerpts do not answer the question, say so.
+```python
+context = "\n\n".join(f"{hit.node.metadata['file_name']}:\n{hit.node.text}" for hit in hits)
 ```
 
 Ask “What is the minimum account balance?” The collection has no account-balance rule. A search may still return a nearest passage. Check whether it actually supports an answer.
@@ -165,15 +161,17 @@ Ask “What is the minimum account balance?” The collection has no account-bal
 # Claude is the generation model
 
 ```python
-Settings.llm = Anthropic(
+client = Anthropic(api_key=os.environ["CLAUDE_API_KEY"])
+response = client.messages.create(
     model=os.getenv("CLAUDE_MODEL", "claude-haiku-5-5"),
-    api_key=os.environ["CLAUDE_API_KEY"],
-    system_prompt="Answer from the policy excerpts. Cite the source filename. "
+    max_tokens=256,
+    system="Answer from the policy excerpts. Cite the source filename. "
     "If the excerpts do not answer the question, say so.",
+    messages=[{"role": "user", "content": f"Excerpts:\n{context}\n\nQuestion: {question}"}],
 )
 ```
 
-`Settings.embed_model` was for search. `Settings.llm` tells LlamaIndex which model writes the answer.
+LlamaIndex finds the excerpts. The same `client.messages.create(...)` call from the Claude intro sends those excerpts and the question to Claude.
 
 ---
 
@@ -186,27 +184,21 @@ uv run snippets/2_rag.py
 ```
 
 ```python
-response = index.as_query_engine(similarity_top_k=2).query(question)
-print(response)
-print("Sources:", [hit.node.metadata["source"] for hit in response.source_nodes])
+print(response.content[0].text)
+print("Sources:", [hit.node.metadata["file_name"] for hit in hits])
 ```
 
 Expect **35% per asset**. Check that the answer’s citation names a source that contains the rule. The printed source list shows the excerpts the engine worked with.
 
 ---
 
-# The whole pipeline in four lines
+# Trace the question through the code
 
-Once Claude and the embedding model are configured, this is the flow.
-
-```python
-documents = SimpleDirectoryReader(input_dir=str(policy_dir)).load_data()
-index = VectorStoreIndex.from_documents(documents)
-query_engine = index.as_query_engine(similarity_top_k=2)
-response = query_engine.query(question)
+```text
+Load documents → build the index → retrieve excerpts → ask Claude
 ```
 
-The reader loads the source. The index prepares it for search. The query engine searches and asks Claude to answer. The runnable snippet also keeps a short source label for each file.
+Which line selects the evidence? Which line sends it to Claude?
 
 ---
 
