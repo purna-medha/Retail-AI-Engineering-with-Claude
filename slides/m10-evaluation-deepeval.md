@@ -246,7 +246,7 @@ Set `CLAUDE_API_KEY` in the repository’s `.env`. From the repository root:
 
 ```bash
 uv run --with deepeval --with anthropic --with python-dotenv \
-  deepeval test run snippets/m10_eval_llm_output.py
+  deepeval test run snippets/m10_1_eval_llm_output.py
 ```
 
 ```text
@@ -381,7 +381,7 @@ The retriever returns **one** excerpt per question.
 # Code-along · Run the RAG evaluation
 
 ```bash
-uv run snippets/m10_eval_rag.py
+uv run snippets/m10_2_eval_rag.py
 ```
 
 ```text
@@ -502,7 +502,7 @@ for golden in dataset.evals_iterator(metrics=[task_completion]):
 # Code-along · Evaluate the agent on three goldens
 
 ```bash
-uv run snippets/m10_eval_agent.py
+uv run snippets/m10_3_eval_agent.py
 ```
 
 ```text
@@ -579,7 +579,7 @@ The agent did the right thing: it reported the gap. The judge inferred the task 
 
 # Optional · Check the path with exact rules
 
-Task completion is a judgment. When the correct path is known, check it in code too. The [tool-correctness snippet](../snippets/m10_eval_agent_tool_correctness.py) records `tools_called` and compares them with `expected_tools`:
+Task completion is a judgment. When the correct path is known, check it in code too. The [tool-correctness snippet](../snippets/m10_3b_eval_agent_tool_correctness.py) records `tools_called` and compares them with `expected_tools`:
 
 | Run | Tool Correctness | Task Completion |
 | --- | --- | --- |
@@ -632,7 +632,7 @@ A failing metric raises `AssertionError` with its score and reason.
 
 ```bash
 uv run --with deepeval --with anthropic --with python-dotenv --with pytest \
-  pytest snippets/m10_test_statement_bot.py -v
+  pytest snippets/m10_4_test_statement_bot.py -v
 ```
 
 ```text

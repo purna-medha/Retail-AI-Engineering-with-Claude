@@ -1,5 +1,5 @@
 # Run the same eval cases as a test suite, so every prompt or model change gets re-checked.
-# uv run --with deepeval --with anthropic --with python-dotenv --with pytest pytest snippets/m10_test_statement_bot.py -v
+# uv run --with deepeval --with anthropic --with python-dotenv --with pytest pytest snippets/m10_4_test_statement_bot.py -v
 import os
 
 import pytest

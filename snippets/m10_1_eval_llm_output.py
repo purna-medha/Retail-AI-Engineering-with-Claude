@@ -1,5 +1,5 @@
 # Simple LLM eval: one test case, one GEval metric, a Claude judge.
-# uv run --with deepeval --with anthropic --with python-dotenv deepeval test run snippets/m10_eval_llm_output.py
+# uv run --with deepeval --with anthropic --with python-dotenv deepeval test run snippets/m10_1_eval_llm_output.py
 import os
 
 from anthropic import Anthropic
@@ -14,7 +14,6 @@ client = Anthropic(api_key=os.environ["CLAUDE_API_KEY"])
 
 # The judge model. Without it, GEval tries to use OpenAI.
 judge = AnthropicModel(model="claude-haiku-5-5", api_key=os.environ["CLAUDE_API_KEY"])
-
 
 def nano_bank_assistant(question: str) -> str:
     """The LLM application under test."""
